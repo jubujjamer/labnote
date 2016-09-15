@@ -5,9 +5,13 @@ File: commands.c
 command-line tool to mangage the lab notebook.
 usage
 keywords: today is today's date
--n adds new day.
--o datefile opens html file from the specified date.
+-n adds new day
+-o datefile opens html file from the specified date
 -l lists wich files are included in the day's folder
+-e opens datefile in edit mode
+-f looks for keywords in the specified date range
+-i opens the index file
+
 
 *******************************************************************************/
 #include <stdio.h>
@@ -17,7 +21,6 @@ keywords: today is today's date
 #include <time.h>
 #include "names.h"
 #include "funcs.h"
-
 
 int main(int argc, char **argv){
 	extern char *optarg;

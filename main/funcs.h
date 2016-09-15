@@ -27,9 +27,11 @@ void init_new_day(struct tm * today_date){
 	chdir(dir);
 	mkdir(buffer_fname,0700);
 	chdir(buffer_fname);
-	fp = fopen(filename,"w");
-	fprintf(fp,"= %s\nJuan Marco Bujjamer <jubujjamer@df.uba.ar>\n%s\n:toc:\n:icons: font\n",buffer_fname,buffer_dayname);
-	fclose(fp);
+	if( access( filename, F_OK ) == -1 ) {
+		fp = fopen(filename,"w");
+		fprintf(fp,"= %s\nJuan Marco Bujjamer <jubujjamer@df.uba.ar>\n%s\n:toc:\n:icons: font\n",buffer_fname,buffer_dayname);
+		fclose(fp);
+	}
 	char command[50];
 	sprintf(command,"atom %s.adoc",buffer_fname);
 	system(command);
