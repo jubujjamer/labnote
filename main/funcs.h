@@ -15,14 +15,16 @@ labnotebook -n creates a new folder in my_labnote_dir/content with today's name 
 void init_new_day(struct tm * today_date){
 	FILE *fp;
 	setlocale(LC_ALL, "");
-	char buffer_fname[50], buffer_dayname[50],filename[50];
+	char buffer_fname[50], buffer_dayname[50],filename[50],dir[50];
 	strftime(buffer_fname, sizeof(filename), "%F", today_date);
 	sprintf(filename,"%s.adoc",buffer_fname);
+	sprintf(dir,"%s/%s/%s",HOME,WORKING_PATH,CONTENT_DIR);
 	strftime(buffer_dayname, sizeof(buffer_dayname), "%A %d de %B de %Y", today_date);
 	printf("Creating %s file and folder.\n", filename);
-	chdir(HOME);
-	chdir(WORKING_PATH);
-	chdir(CONTENT_DIR);
+	//chdir(HOME);
+	//chdir(WORKING_PATH);
+	//chdir(CONTENT_DIR);
+	chdir(dir);
 	mkdir(buffer_fname,0700);
 	chdir(buffer_fname);
 	fp = fopen(filename,"w");
@@ -31,4 +33,12 @@ void init_new_day(struct tm * today_date){
 	char command[50];
 	sprintf(command,"atom %s.adoc",buffer_fname);
 	system(command);
+}
+
+void open_day(char * date_fname){
+	FILE *fp;
+	//char buffer_fname[50], buffer_dayname[50],filename[50];
+	//strftime(buffer_fname, sizeof(filename), "%F", date);
+	//sprintf(filename,"%s.adoc",buffer_fname);
+	printf("%s",date_fname);
 }
