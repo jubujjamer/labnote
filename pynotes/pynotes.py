@@ -12,7 +12,9 @@ import datetime as dt
 import locale
 from subprocess import call
 
-HOME_DIR = '/home/juan/lab_notebook/'
+HOME_DIR = '~/lab_notebook/'
+USER = 'Juan Marco Bujjamer'
+EMAIL = 'jubujjamer@df.uba.ar'
 DIR_DICT = {'CONT': 'content',
             'INV': 'inventory',
             'DOCS': 'documents',
@@ -26,55 +28,47 @@ def init_filetree():
             os.makedirs(DIR_DICT[d])
 
 
-def _print_header(date):
-    return
+def _print_header(target, date):
+    target.write('= '+date.strftime('%Y-%m-%d')+'\n')
+    target.write(USER + ' ' + EMAIL + '\n')
+    target.write(date.strftime("%A %d de %B de %Y\n"))
+    target.write(':toc:\n')
+    target.write(':icons: font\n')
+
 
 def create_day_file():
     date = dt.datetime.today()
     date_name = date.strftime('%Y-%m-%d')
     dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
     adoc_filename = os.path.join(dir_name, date_name + '.adoc')
-    today = dt.datetime.today()
-    print adoc_filename
+    path = os.path.expanduser(dir_name)
+    if not os.path.exists(path):
+        os.makedirs(path)
+        with open(adoc_filename, 'w') as target:
+            _print_header(target, date)
+    else:
+        print "Directory already created."
+    # call(["atom", adoc_filename])
 
-create_day_file()
-    #
-    # if not os.path.exists(dir_name):
-    #     try:
-    #         path = os.path.expanduser(dir_name)
-    #         os.makedirs(path)
-    #         # Printing header
-    #         target = open(adoc_filename, 'w')
-    #         target.write('= '+date_name+'\n')
-    #         target.write('Juan Marco Bujjamer <jubujjamer@df.uba.ar>\n')
-    #         target.write(date.strftime("%A %d de %B de %Y\n"))
-    #         target.write(':toc:\n')
-    #         target.write(':icons: font\n')
-    #         target.close()
-    #     except:
-    #         print "Directory already created."
-    #         call(["atom",adoc_filename])
-    #         print adoc_filename
-    # call(["atom",adoc_filename])
 
-def get_summary(day_file):
-    SUMARY_CHAR = 2
-    day_sum_list = []
+def get_summary(date_str):
+    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    date_name = date.strftime('%Y-%m-%d')
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
+    path = os.path.expanduser(adoc_filename)
+    print path
     try:
-        adoc_day_file = open(day_file,'r')
+        adoc_day_file = open(path, 'r')
     except:
         print "No file to read"
-        return []
+        return "Nada que mostrar."
     flines = adoc_day_file.readlines()
-    for line in flines:
-        if line[0:SUMARY_CHAR] == '==':
-            day_sum_list.append(line[SUMARY_CHAR+1:-1])
+    day_sum_list = [line[3:] for line in flines if line[0:2] == '==']
     return day_sum_list
 
 
-
 def refresh_changes():
-    locale.setlocale(locale.LC_TIME,'') # Dates in Spanish
     day_array = []
     index_name = '../index.adoc'
     day_collection = DayCollection()
