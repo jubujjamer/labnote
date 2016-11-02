@@ -12,6 +12,9 @@ import datetime as dt
 import locale
 from subprocess import call
 
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+
 HOME_DIR = '~/lab_notebook/'
 USER = 'Juan Marco Bujjamer'
 EMAIL = 'jubujjamer@df.uba.ar'
@@ -20,6 +23,20 @@ DIR_DICT = {'CONT': 'content',
             'DOCS': 'documents',
             'GEN': 'general'}
 locale.setlocale(locale.LC_TIME, '')  # Dates in Spanish
+
+
+def _get_date_path(date):
+    str_date = date.strftime('%Y-%m-%d')
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], str_date)
+    return os.path.expanduser(dir_name)
+
+
+def _get_date_file(date, type='adoc'):
+    str_date = date.strftime('%Y-%m-%d')
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], str_date)
+    if type is 'adoc':
+        path = os.path.join(dir_name, str_date + '.adoc')
+        return os.path.expanduser(path)
 
 
 def init_filetree():
@@ -38,10 +55,8 @@ def _print_header(target, date):
 
 def create_day_file():
     date = dt.datetime.today()
-    date_name = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
-    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
-    path = os.path.expanduser(dir_name)
+    path = _get_date_path(date)
+    adoc_filename = _get_date_file(date, 'adoc')
     if not os.path.exists(path):
         os.makedirs(path)
         with open(adoc_filename, 'w') as target:
@@ -66,6 +81,17 @@ def get_summary(date_str):
     flines = adoc_day_file.readlines()
     day_sum_list = [line[3:] for line in flines if line[0:2] == '==']
     return day_sum_list
+
+
+def search_day(date_str, limit):
+    dir_name = os.path.join(HOME_DIR, DIR_DICT['CONT'])
+    dir_name = os.path.expanduser(dir_name)
+    dirs = os.listdir(dir_name)
+    dates_list = sorted([(dt.datetime.strptime(a, '%Y-%m-%d')) for a in dirs],
+                        reverse=True)
+    dates_syns = [date.strftime('%A %d %B %Y') for date in dates_list]
+    dates_found = process.extract(date_str, dates_syns, limit=limit)
+    print dates_found
 
 
 def refresh_changes():
