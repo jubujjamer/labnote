@@ -7,11 +7,13 @@ Last update: 30/10/2016
 Usage:
 
 """
+from __future__ import print_function
 import os
 import datetime as dt
 import locale
 from subprocess import call
 
+from unicodedata import normalize
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
@@ -34,9 +36,30 @@ def _get_date_path(date):
 def _get_date_file(date, type='adoc'):
     str_date = date.strftime('%Y-%m-%d')
     dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], str_date)
+    path = os.path.join(dir_name, str_date + '.adoc')
     if type is 'adoc':
-        path = os.path.join(dir_name, str_date + '.adoc')
         return os.path.expanduser(path)
+    elif type is 'html':
+        call(['asciidoctor', os.path.expanduser(path)])
+        path = os.path.join(dir_name, str_date + '.html')
+        return os.path.expanduser(path)
+
+
+def get_existing_dates():
+    dir_name = os.path.join(HOME_DIR, DIR_DICT['CONT'])
+    dir_name = os.path.expanduser(dir_name)
+    dirs = os.listdir(dir_name)
+    return dirs
+
+
+def open_day_file(date_str, type='adoc'):
+    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    if type is 'adoc':
+        adoc_filename = _get_date_file(date, type='adoc')
+        call(["atom", adoc_filename])
+    elif type is 'html':
+        html_filename = _get_date_file(date, type='html')
+        call(['xdg-open', html_filename])
 
 
 def init_filetree():
@@ -62,8 +85,8 @@ def create_day_file():
         with open(adoc_filename, 'w') as target:
             _print_header(target, date)
     else:
-        print "Directory already created."
-    # call(["atom", adoc_filename])
+        print('Directory already created.')
+        # call(["atom", adoc_filename])
 
 
 def get_summary(date_str):
@@ -72,15 +95,23 @@ def get_summary(date_str):
     dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
     adoc_filename = os.path.join(dir_name, date_name + '.adoc')
     path = os.path.expanduser(adoc_filename)
-    print path
     try:
         adoc_day_file = open(path, 'r')
     except:
-        print "No file to read"
-        return "Nada que mostrar."
+        print('No file to read')
+        return 'Nothing to show.'
     flines = adoc_day_file.readlines()
-    day_sum_list = [line[3:] for line in flines if line[0:2] == '==']
+    day_sum_list = [line[3:].decode('utf-8')
+                    for line in flines if line[0:2] == '==']
+    day_sum_list = [normalize('NFKD', data).encode('ascii', 'ignore')
+                    for data in day_sum_list]
     return day_sum_list
+
+
+def print_summary(date_str):
+    summary = get_summary(date_str)
+    for item in summary:
+        print('-> %s' % item[0:-1], end='\n')
 
 
 def search_day(date_str, limit):
@@ -91,7 +122,7 @@ def search_day(date_str, limit):
                         reverse=True)
     dates_syns = [date.strftime('%A %d %B %Y') for date in dates_list]
     dates_found = process.extract(date_str, dates_syns, limit=limit)
-    print dates_found
+    print(dates_found)
 
 
 def refresh_changes():
@@ -104,7 +135,8 @@ def refresh_changes():
     # html_filename = dir_name+'/'+date_name+'.html'
 
     # Get file numbers from lab_notebook folder
-    fnames_nbook = [name for name in os.listdir(CONTENT_FOLDER) if os.path.isdir(CONTENT_FOLDER+name)]
+    fnames_nbook = [name for name in os.listdir(CONTENT_FOLDER)
+                    if os.path.isdir(CONTENT_FOLDER+name)]
 
     dates_dir = []
     summaries_arraprint_add_satesy = []
@@ -138,13 +170,11 @@ def refresh_changes():
     target = open(index_name, 'a')
     #Search for non indexed dates
     for d in dates_index:
-        print day_collection.find(d)
+        print(day_collection.find(d))
     day_collection.print_add_sates()
     for ud in day_collection.days:
-        print ud
         if ud.added_flag == 0:
             i_summary = ud.get_summary()
-            print i_summary
             s_summary = ''
             for e in i_summary:
                 s_summary = s_summary + str(e) + '. '
@@ -159,4 +189,3 @@ def refresh_changes():
 
     # index_file = open(index_name, "r+")
     call(["asciidoctor", "../index.adoc"])
-    print "All done"
