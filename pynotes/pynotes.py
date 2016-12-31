@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """ File pynotes.py
 
-Last update: 30/10/2016
+Last update: 31/12/2016
+Library for laboratory notebook system management.
 
 Usage:
 
@@ -17,6 +18,7 @@ from unicodedata import normalize
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
+DAY_DOT_MARK = '.'
 HOME_DIR = '~/lab_notebook/'
 USER = 'Juan Marco Bujjamer'
 EMAIL = 'jubujjamer@df.uba.ar'
@@ -45,6 +47,19 @@ def _get_date_file(date, type='adoc'):
         return os.path.expanduser(path)
 
 
+def reset_index():
+    index_name = os.path.expanduser(os.path.join(HOME_DIR, 'index.adoc'))
+    with open(index_name, 'w') as ifile:
+        ifile.write('= Indice del cuaderno de laboratorio\n')
+        ifile.write(USER + ' ' + EMAIL + '\n')
+        ifile.write('Indice general del cuaderno de laboratorio\n')
+        ifile.write(':toc:\n\n')
+        ifile.write('== Inventario de óptica y electrónica\n')
+        ifile.write('link:./inventario/inventario.ods[Inventario]\n\n')
+        ifile.write('== Referencias importantes\n')
+        ifile.write('link:./docs/daq.html[Adquisición de datos]\n')
+
+
 def get_existing_dates():
     dir_name = os.path.join(HOME_DIR, DIR_DICT['CONT'])
     dir_name = os.path.expanduser(dir_name)
@@ -63,6 +78,7 @@ def open_day_file(date_str, type='adoc'):
 
 
 def open_index():
+    update_index()
     index_filename = os.path.join(HOME_DIR, 'index.html')
     index_filename = os.path.expanduser(index_filename)
     print(index_filename)
@@ -71,8 +87,11 @@ def open_index():
 
 def init_filetree():
     for d in DIR_DICT:
-        if not os.path.exists(DIR_DICT[d]):
-            os.makedirs(DIR_DICT[d])
+        new_dir = os.path.join(HOME_DIR, DIR_DICT[d])
+        new_dir = os.path.expanduser(new_dir)
+        if not os.path.exists(new_dir):
+            print(d)
+            os.makedirs(new_dir)
 
 
 def _print_header(target, date):
@@ -93,7 +112,7 @@ def create_day_file():
             _print_header(target, date)
     else:
         print('Directory already created.')
-        # call(["atom", adoc_filename])
+    call(["atom", adoc_filename])
 
 
 def get_summary(date_str):
@@ -132,67 +151,42 @@ def search_day(date_str, limit):
     print(dates_found)
 
 
-def refresh_changes():
-    day_array = []
-    index_name = '../index.adoc'
-    day_collection = DayCollection()
-    # date = datetime.datetime(2016,02, 1)
-    # date_name = date.strftime('%Y-%m-%d')
-    # dir_name = './'+date_name
-    # html_filename = dir_name+'/'+date_name+'.html'
-
-    # Get file numbers from lab_notebook folder
-    fnames_nbook = [name for name in os.listdir(CONTENT_FOLDER)
-                    if os.path.isdir(CONTENT_FOLDER+name)]
-
-    dates_dir = []
-    summaries_arraprint_add_satesy = []
-    for f in fnames_nbook:
-        try:
-            i_date = datetime.datetime.strptime(f, '%Y-%m-%d')
-            dates_dir.append(i_date)
-            # Update with ascidoctor
-            i_day_file = CONTENT_FOLDER+f+"/"+f+".adoc"
-            i_summary = get_summary(i_day_file)
-            i_day = Day(i_day_file, i_date, i_summary)
-            day_collection.add_day(i_day)
-            #day_array.append(i_day)
-            call(["asciidoctor", i_day_file])
-            # print  i_day.get_filename(), i_day.get_sum()
-        except ValueError:
-            continue
-    # raise ValueError("Incorrect data format, should be YYYY-MM-DD")
-    # Comparo con los titulos de index
-    index_file = open(index_name, "r+")
-    lines = index_file.readlines()
-    dates_index = []
-    for l in lines:
-        if l[0] == '.':
-            try:
-                dates_index.append(datetime.datetime.strptime(l[1:].lower(), '%A %d de %B de %Y\n'))
-            except ValueError:
-                break
-    index_file.close()
-
-    target = open(index_name, 'a')
-    #Search for non indexed dates
-    for d in dates_index:
-        print(day_collection.find(d))
-    day_collection.print_add_sates()
-    for ud in day_collection.days:
-        if ud.added_flag == 0:
-            i_summary = ud.get_summary()
-            s_summary = ''
-            for e in i_summary:
-                s_summary = s_summary + str(e) + '. '
-            target.write('\n')
-            datestr = ud.date.strftime("%A %d de %B de %Y\n")
-            target.write('.'+datestr[0].upper()+datestr[1:])
-            target.write('* Resumen: ')
-            target.write(s_summary+'\n')
-            dir_link = ud.date.strftime("%Y-%m-%d")
-            target.write('* link:./content/'+dir_link+'/'+dir_link+'.html[]\n')
-    target.close()
-
-    # index_file = open(index_name, "r+")
-    call(["asciidoctor", "../index.adoc"])
+def update_index(complete=None):
+    """ Updates index with the information on new added days.
+    """
+    fdates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
+                     for date in get_existing_dates()])
+    index_name = os.path.expanduser(os.path.join(HOME_DIR, 'index.adoc'))
+    with open(index_name, "r+") as ifile:
+        lines = ifile.readlines()
+        idates = list()
+        for line in lines:
+            if line[0] == DAY_DOT_MARK:
+                try:
+                    idates.append(dt.datetime.strptime(line[1:].lower(),
+                                  '%A %d de %B de %Y\n'))
+                except ValueError:
+                    break
+    # Close your eyes, heavy hardcoding ahead
+    with open(index_name, 'a') as target:
+        # Search for non indexed dates
+        for fdate in fdates:
+            fdate_str = dt.datetime.strftime(fdate, '%Y-%m-%d')
+            datesum = get_summary(fdate_str)
+            if(fdate not in idates and datesum != []):
+                target.write('\n')
+                # Printing formatted date
+                fmtdate = dt.datetime.strftime(fdate,
+                                               '%A %d de %B de %Y\n')
+                target.write('.%s%s' % (fmtdate[0].upper(), fmtdate[1:]))
+                # Printing summary
+                target.write('Resumen: ')
+                for item in datesum:
+                    target.write('%s. ' % item[0:-1])
+                # target.write('\r\n')
+                # Printing link to html
+                link_dir = os.path.join(HOME_DIR, DIR_DICT['CONT'],
+                                        fdate_str, fdate_str+'.html')
+                link_dir = os.path.expanduser(link_dir)
+                target.write(' link:%s[Ir]\n' % (link_dir))
+    call(['asciidoctor', index_name])
