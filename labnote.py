@@ -17,9 +17,12 @@ parser.add_argument('--view', '-v', dest='open_day_file', nargs=1,
                     action='store', choices=existing_dates,
                     help='opens a labnote page in browser',
                     metavar='Y-M-D')
-parser.add_argument('--edit', dest='open_edit',
-                    action='store_true',
+parser.add_argument('--edit', '-e', dest='open_edit', nargs=1,
+                    action='store', choices=existing_dates,
                     help='opens a labnote adoc file for edition')
+parser.add_argument('--index', '-i', dest='open_index',
+                    action='store_true',
+                    help='opens the general index')
 #
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
@@ -28,10 +31,16 @@ if args.new_day:
 elif args.get_summary:
     pynotes.print_summary(args.get_summary[0])
 elif args.open_day_file:
-    if not args.open_edit:
-        pynotes.open_day_file(args.open_day_file[0], 'html')
-    else:
-        pynotes.open_day_file(args.open_day_file[0], 'adoc')
+    pynotes.open_day_file(args.open_day_file[0], 'html')
+elif args.open_edit:
+    pynotes.open_day_file(args.open_edit[0], 'adoc')
+elif args.open_index:
+    pynotes.open_index()
+# elif args.open_day_file:
+#     if not args.open_edit:
+#         pynotes.open_day_file(args.open_day_file[0], 'html')
+#     else:
+#         pynotes.open_day_file(args.open_day_file[0], 'adoc')
 
 # def main(argv):
 #     try:

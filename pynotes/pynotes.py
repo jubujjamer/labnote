@@ -62,6 +62,13 @@ def open_day_file(date_str, type='adoc'):
         call(['xdg-open', html_filename])
 
 
+def open_index():
+    index_filename = os.path.join(HOME_DIR, 'index.html')
+    index_filename = os.path.expanduser(index_filename)
+    print(index_filename)
+    call(['xdg-open', index_filename])
+
+
 def init_filetree():
     for d in DIR_DICT:
         if not os.path.exists(DIR_DICT[d]):
