@@ -190,3 +190,20 @@ def update_index(complete=None):
                 link_dir = os.path.expanduser(link_dir)
                 target.write(' link:%s[Ir]\n' % (link_dir))
     call(['asciidoctor', index_name])
+
+
+def convert_all_asciidocs():
+    """ Updates index with the information on new added days.
+    """
+    fdates = [dt.datetime.strptime(date, '%Y-%m-%d')
+                     for date in get_existing_dates()]
+
+    for date in fdates:
+        try:
+            date_name = date.strftime('%Y-%m-%d')
+            dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+            adoc_filename = os.path.join(dir_name, date_name + '.adoc')
+            path = os.path.expanduser(adoc_filename)
+            call(['asciidoctor', path])
+        except:
+            print("File %s not found." % path)
