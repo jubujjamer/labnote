@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Calendario del trabajo en laboratorio</title>
+    <meta charset='utf-8' />
+    <link href='static/style.css' rel='stylesheet' />
+    <link href='static/fullcalendar.min.css' rel='stylesheet' />
+    <link href='static/fullcalendar.print.min.css' rel='stylesheet' media='print' />
+    <script src='static/lib/moment.min.js'></script>
+    <script src='static/lib/jquery.min.js'></script>
+    <script src='static/fullcalendar.min.js'></script>
+<script>
+  $(document).ready(function() {
+
+    ev = {{data|tojson}}
+
+        $('#calendar1').fullCalendar({
+          header: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'month,agendaWeek,agendaDay,listWeek'
+          },
+          defaultDate: '2017-12-12',
+          navLinks: true, // can click day/week names to navigate views
+          editable: true,
+          eventLimit: true, // allow "more" link when too many events
+
+          events: ev
+        });
+
+      });
+
+</script>
+<style>
+  body {
+    margin: 40px 10px;
+    padding: 0;
+    font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+    font-size: 14px;
+  }
+
+  #calendar1 {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+</style>
+
+</head>
+<body>
+  <header id="main-header">
+    <a id="logo-header" href="#">
+      <span class="site-name">Calendario de laboratorio</span>
+    </a> <!-- / #logo-header -->
+  </header><!-- / #main-header -->
+  <div id='calendar1'></div>
+</body>
+</html>
