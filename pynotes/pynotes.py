@@ -13,10 +13,13 @@ import os
 import datetime as dt
 import locale
 from subprocess import call
-
+import calendar
+import json
 from unicodedata import normalize
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+
+from web import index_server
 
 DAY_DOT_MARK = '.'
 HOME_DIR = '~/lab_notebook/'
@@ -69,6 +72,9 @@ def get_existing_dates():
 
 def open_day_file(date_str, type='adoc'):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    if date_str not in get_existing_dates():
+        print("This case")
+        create_day_file(date_str)
     if type is 'adoc':
         adoc_filename = _get_date_file(date, type='adoc')
         call(["atom", adoc_filename])
@@ -102,8 +108,11 @@ def _print_header(target, date):
     target.write(':icons: font\n')
 
 
-def create_day_file():
-    date = dt.datetime.today()
+def create_day_file(date_str=None):
+    if date_str is None:
+        date = dt.datetime.today()
+    else:
+        date = dt.datetime.strptime(date_str, "%Y-%m-%d")
     path = _get_date_path(date)
     adoc_filename = _get_date_file(date, 'adoc')
     if not os.path.exists(path):
@@ -124,12 +133,12 @@ def get_summary(date_str):
     try:
         adoc_day_file = open(path, 'r')
     except:
-        print('No file to read')
+        print('No file to read in %s' % date_str)
         return 'Nothing to show.'
     flines = adoc_day_file.readlines()
     day_sum_list = [line[3:].decode('utf-8')
-                    for line in flines if line[0:2] == '==']
-    day_sum_list = [normalize('NFKD', data).encode('ascii', 'ignore')
+                    for line in flines if line[0:2] == '==' and line[3] != '=']
+    day_sum_list = [normalize('NFKD', data[:-1]).encode('ascii', 'ignore')
                     for data in day_sum_list]
     return day_sum_list
 
@@ -189,8 +198,26 @@ def update_index(complete=None):
                                         fdate_str, fdate_str+'.html')
                 link_dir = os.path.expanduser(link_dir)
                 target.write(' link:%s[Ir]\n' % (link_dir))
+    print(index_name)
     call(['asciidoctor', index_name])
 
+
+def open_web_index():
+    fdates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
+                     for date in get_existing_dates()])
+    sumlist = []
+    for fdate in fdates:
+        fdate_str = dt.datetime.strftime(fdate, '%Y-%m-%d')
+        summary = get_summary(fdate_str)
+        for s in summary:
+            dateurl = 'file:///home/juan/lab_notebook/content/%s/%s.html' % (fdate_str, fdate_str)
+            sumlist.append({'start' : fdate_str, 'title': s, 'url': dateurl})
+    with open('./pynotes/web/static/summary.json', 'w') as outfile:
+        print(json.dump(sumlist, outfile))
+
+    app = index_server.create_server()
+    app.run()
+    return
 
 def convert_all_asciidocs():
     """ Updates index with the information on new added days.

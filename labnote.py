@@ -20,8 +20,7 @@ parser.add_argument('--view', '-v', dest='open_day_file', nargs=1,
                     help='opens a labnote page in browser',
                     metavar='Y-M-D')
 parser.add_argument('--edit', '-e', dest='open_edit', nargs=1,
-                    action='store', choices=existing_dates,
-                    help='opens a labnote adoc file for edition')
+                    action='store', help='opens a labnote adoc file for edition')
 parser.add_argument('--index', '-i', dest='open_index',
                     action='store_true',
                     help='opens the general index')
