@@ -15,16 +15,16 @@ import locale
 from subprocess import call
 import calendar
 import json
-from unicodedata import normalize
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
 
-from web import index_server
+from unicodedata import normalize
+from fuzzywuzzy import fuzz, process
+from .web import index_server
 
 DAY_DOT_MARK = '.'
 HOME_DIR = '~/lab_notebook/'
 USER = 'Juan Marco Bujjamer'
 EMAIL = 'jubujjamer@df.uba.ar'
+JSUM = './pynotes/web/static/summary.json'
 DIR_DICT = {'CONT': 'content',
             'INV': 'inventory',
             'DOCS': 'documents',
@@ -134,7 +134,7 @@ def get_summary(date_str):
         adoc_day_file = open(path, 'r')
     except:
         print('No file to read in %s' % date_str)
-        return 'Nothing to show.'
+        return ''
     flines = adoc_day_file.readlines()
     day_sum_list = [line[3:].decode('utf-8')
                     for line in flines if line[0:2] == '==' and line[3] != '=']
@@ -202,7 +202,11 @@ def update_index(complete=None):
     call(['asciidoctor', index_name])
 
 
-def open_web_index():
+def open_template_index():
+    """ Index manging using flask and templates for improved flexibility.
+
+    """
+    # First write summaries to a json file to be accesed by the calendar.
     fdates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
                      for date in get_existing_dates()])
     sumlist = []
@@ -210,12 +214,31 @@ def open_web_index():
         fdate_str = dt.datetime.strftime(fdate, '%Y-%m-%d')
         summary = get_summary(fdate_str)
         for s in summary:
-            dateurl = 'file:///home/juan/lab_notebook/content/%s/%s.html' % (fdate_str, fdate_str)
-            sumlist.append({'start' : fdate_str, 'title': s, 'url': dateurl})
-    with open('./pynotes/web/static/summary.json', 'w') as outfile:
+            sumlist.append({'start' : fdate_str, 'title': s})
+    with open(JSUM, 'w') as outfile:
         print(json.dump(sumlist, outfile))
+    # then run the web service
+    date_titles = list()
+    last_year = 1900
+    last_month = None
+    for fdate in fdates:
+        if fdate.year != last_year:
+            date_titles.append((fdate.year, 'year'))
+        if fdate.month != last_month:
+            fmtmonth = dt.datetime.strftime(fdate, '%B')
+            fmtmonth = '%s%s' % (fmtmonth[0].upper(), fmtmonth[1:])
+            date_titles.append((fmtmonth, 'month'))
+        fmtday = dt.datetime.strftime(fdate, '%A %d').decode('utf-8')
+        fmtday = '%s%s' % (fmtday[0].upper(), fmtday[1:])
+        date_titles.append((fmtday, 'day'))
+        for s in get_summary(dt.datetime.strftime(fdate, '%Y-%m-%d')):
+            date_titles.append((s, 'summary'))
 
-    app = index_server.create_server()
+        print(fmtmonth)
+        last_year = fdate.year
+        last_month = fdate.month
+
+    app = index_server.create_server(fdates=date_titles)
     app.run()
     return
 

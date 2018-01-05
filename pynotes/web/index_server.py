@@ -15,25 +15,24 @@ from flask import Flask, Response, render_template, request
 FOLDER = os.path.abspath(os.path.dirname(__file__))
 
 
-def create_server():
+def create_server(fdates=None):
     app = Flask("Labnote", template_folder=os.path.join(FOLDER, 'templates'),
                        static_folder=os.path.join(FOLDER, 'static'))
-
     @app.route("/")
     def init():
         return Response("Testing")
 
     @app.route("/index")
     def index():
-        data=None
-        return render_template('index.html',
-                               data=data)
+        return render_template('index.html', dates=fdates)
 
     @app.route('/calendar')
     def calendar():
         SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
         json_url = os.path.join(SITE_ROOT, 'static', 'summary.json')
         data = json.load(open(json_url))
+
+
         return render_template('calendar.html',
                                data=data)
 

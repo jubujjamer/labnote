@@ -18,11 +18,48 @@
 
   <header id="main-header">
     <a id="logo-header" href="#">
-      <span class="site-name">Indice general del cuaderno de laboratorio</span>
+      <span class="site-name">Indice general</span>
+    </a>
+  </header>
+
+  <p><a href="file:////home/lec/lab_notebook/inventario/inventario.ods">Inventario</a></p>
+  <p><a href="./calendar">Calendario</a></p>
+
+  <header id="main-header">
+    <a id="logo-header" href="#">
+      <span class="site-name"> Resumen de contenido</span>
     </a> <!-- / #logo-header -->
   </header><!-- / #main-header -->
 
-  <p><a href="file:////home/juan/lab_notebook/inventario/inventario.ods">Inventario</a></p>
-  <p><a href="./calendar">Calendario</a></p>
+ {% macro create_year_block(year) %}
+    <h3>{{year}}</h3>
+ {% endmacro %}
+
+ {% macro create_month_block(title) %}
+    <h4>{{title}}</h4>
+ {% endmacro %}
+
+ {% macro create_day_block(title) %}
+    <h2><a href="file://////home/lec/lab_notebook/content/2016-02-17/2016-02-17.html" class="bare"> {{title}} </a></h2>
+ {% endmacro %}
+
+ {% macro add_summary_entry(summary) %}
+    <h5>{{summary}}</h5>
+ {% endmacro %}
+
+ {% for title, dtype in dates %}
+    {% if dtype == "year" %}
+        {{ create_year_block(title) }}
+    {% elif dtype == "month" %}
+        {{ create_month_block(title) }}
+    {% elif dtype == "day" %}
+        {{ create_day_block(title) }}
+
+    {% elif dtype == "summary" %}
+        {{ add_summary_entry(title) }}
+    {% endif %}
+ {% endfor %}
+
+
 </body>
 </html>
