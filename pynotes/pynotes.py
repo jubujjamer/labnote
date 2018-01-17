@@ -15,6 +15,7 @@ import locale
 from subprocess import call
 import calendar
 import json
+import re
 
 from unicodedata import normalize
 from fuzzywuzzy import fuzz, process
@@ -26,7 +27,7 @@ USER = 'Juan Marco Bujjamer'
 EMAIL = 'jubujjamer@df.uba.ar'
 JSUM = './pynotes/web/static/summary.json'
 DIR_DICT = {'CONT': 'content',
-            'INV': 'inventory',
+            'INV': 'inventario',
             'DOCS': 'documents',
             'GEN': 'general'}
 locale.setlocale(locale.LC_TIME, '')  # Dates in Spanish
@@ -37,8 +38,11 @@ def _get_date_path(date):
     dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], str_date)
     return os.path.expanduser(dir_name)
 
+def get_inventory_path():
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['INV'], 'inventario.ods')
+    return os.path.expanduser(dir_name)
 
-def _get_date_file(date, type='adoc'):
+def get_date_file(date, type='adoc'):
     str_date = date.strftime('%Y-%m-%d')
     dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], str_date)
     path = os.path.join(dir_name, str_date + '.adoc')
@@ -76,10 +80,10 @@ def open_day_file(date_str, type='adoc'):
         print("This case")
         create_day_file(date_str)
     if type is 'adoc':
-        adoc_filename = _get_date_file(date, type='adoc')
+        adoc_filename = get_date_file(date, type='adoc')
         call(["atom", adoc_filename])
     elif type is 'html':
-        html_filename = _get_date_file(date, type='html')
+        html_filename = get_date_file(date, type='html')
         call(['xdg-open', html_filename])
 
 
@@ -114,7 +118,7 @@ def create_day_file(date_str=None):
     else:
         date = dt.datetime.strptime(date_str, "%Y-%m-%d")
     path = _get_date_path(date)
-    adoc_filename = _get_date_file(date, 'adoc')
+    adoc_filename = get_date_file(date, 'adoc')
     if not os.path.exists(path):
         os.makedirs(path)
         with open(adoc_filename, 'w') as target:
@@ -141,6 +145,65 @@ def get_summary(date_str):
     day_sum_list = [normalize('NFKD', data[:-1]).encode('ascii', 'ignore')
                     for data in day_sum_list]
     return day_sum_list
+
+def get_hashtag_list(date_str):
+    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    date_name = date.strftime('%Y-%m-%d')
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
+    path = os.path.expanduser(adoc_filename)
+    try:
+        adoc_day_file = open(path, 'r')
+    except:
+        print('No file to read in %s' % date_str)
+        return ''
+    flines = adoc_day_file.readlines()
+    hashtag_list = []
+    for line in flines:
+        hashtag_list += [i.group().split('#')[1] for i in re.finditer('(^|\s)#[a-z]+', line)]
+    return hashtag_list
+
+def get_future_references(date_str):
+    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    date_name = date.strftime('%Y-%m-%d')
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
+    path = os.path.expanduser(adoc_filename)
+    try:
+        adoc_day_file = open(path, 'r')
+    except:
+        print('No file to read in %s' % date_str)
+        return ''
+    flines = adoc_day_file.readlines()
+    day_ref_list = [line[3:].decode('utf-8')
+                    for line in flines if line[0:3] == '[*]']
+    day_ref_list = [normalize('NFKD', data[:-1]).encode('ascii', 'ignore')
+                    for data in day_ref_list]
+    return day_ref_list
+
+def get_all_hashtags():
+    complete_hashtags = []
+    for fdate_str in get_existing_dates():
+        hashtag_list = get_hashtag_list(fdate_str)
+        if hashtag_list != []:
+            complete_hashtags.append(hashtag_list)
+    return complete_hashtags
+
+
+def get_dir_contents(date_str):
+    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    date_name = date.strftime('%Y-%m-%d')
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+    path = os.path.expanduser(dir_name)
+
+    list_dir = os.listdir(path)
+    list_final = []
+    for l in list_dir:
+        not_printable = ['adoc' in l, 'images' in l, 'html' in l]
+        if not any(not_printable):
+            l = l.decode('ascii', 'ignore')
+            list_final.append("%s" % l)
+    return list_final
 
 
 def print_summary(date_str):
@@ -198,7 +261,6 @@ def update_index(complete=None):
                                         fdate_str, fdate_str+'.html')
                 link_dir = os.path.expanduser(link_dir)
                 target.write(' link:%s[Ir]\n' % (link_dir))
-    print(index_name)
     call(['asciidoctor', index_name])
 
 
@@ -209,36 +271,26 @@ def open_template_index():
     # First write summaries to a json file to be accesed by the calendar.
     fdates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
                      for date in get_existing_dates()])
-    sumlist = []
+    day_list = list()
+    summary_list = list()
+    # then run the web service
     for fdate in fdates:
         fdate_str = dt.datetime.strftime(fdate, '%Y-%m-%d')
-        summary = get_summary(fdate_str)
-        for s in summary:
-            sumlist.append({'start' : fdate_str, 'title': s})
-    with open(JSUM, 'w') as outfile:
-        print(json.dump(sumlist, outfile))
-    # then run the web service
-    date_titles = list()
-    last_year = 1900
-    last_month = None
-    for fdate in fdates:
-        if fdate.year != last_year:
-            date_titles.append((fdate.year, 'year'))
-        if fdate.month != last_month:
-            fmtmonth = dt.datetime.strftime(fdate, '%B')
-            fmtmonth = '%s%s' % (fmtmonth[0].upper(), fmtmonth[1:])
-            date_titles.append((fmtmonth, 'month'))
-        fmtday = dt.datetime.strftime(fdate, '%A %d').decode('utf-8')
-        fmtday = '%s%s' % (fmtday[0].upper(), fmtday[1:])
-        date_titles.append((fmtday, 'day'))
-        for s in get_summary(dt.datetime.strftime(fdate, '%Y-%m-%d')):
-            date_titles.append((s, 'summary'))
+        day_summary = get_summary(fdate_str)
+        for s in day_summary:
+            summary_list.append({'start' : fdate_str, 'title': s})
+        dir_contents = get_dir_contents(fdate_str)
+        hashtag_list = get_hashtag_list(fdate_str)
+        future_references = get_future_references(fdate_str)
+        day_list.append([fdate, day_summary, dir_contents, hashtag_list, future_references])
 
-        print(fmtmonth)
         last_year = fdate.year
         last_month = fdate.month
 
-    app = index_server.create_server(fdates=date_titles)
+    print(get_all_hashtags())
+    with open(JSUM, 'w') as outfile:
+        json.dump(summary_list, outfile)
+    app = index_server.create_server(day_dict=day_list, dt=dt)
     app.run()
     return
 

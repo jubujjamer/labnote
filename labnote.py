@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/home/juan/anaconda2/envs/py27/bin/python
 # PYTHON_ARGCOMPLETE_OK
 import argcomplete
 import argparse
@@ -21,10 +21,10 @@ parser.add_argument('--view', '-v', dest='open_day_file', nargs=1,
                     metavar='Y-M-D')
 parser.add_argument('--edit', '-e', dest='open_edit', nargs=1,
                     action='store', help='opens a labnote adoc file for edition')
-parser.add_argument('--index', '-i', dest='open_index',
-                    action='store_true',
-                    help='opens the general index')
-parser.add_argument('--webindex', '-w', dest='open_template_index',
+# parser.add_argument('--index', '-i', dest='open_index',
+#                     action='store_true',
+#                     help='opens the general index')
+parser.add_argument('--index', '-i', dest='open_template_index',
                     action='store_true',
                     help='opens the general index')
 parser.add_argument('--update', dest='update_asciidocs',
@@ -41,8 +41,8 @@ elif args.open_day_file:
     pynotes.open_day_file(args.open_day_file[0], 'html')
 elif args.open_edit:
     pynotes.open_day_file(args.open_edit[0], 'adoc')
-elif args.open_index:
-    pynotes.open_index()
+# elif args.open_index:
+#     pynotes.open_index()
 elif args.open_template_index:
     pynotes.open_template_index()
 elif args.update_asciidocs:
