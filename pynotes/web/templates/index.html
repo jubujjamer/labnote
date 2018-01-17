@@ -1,65 +1,162 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
+<!--
+	Solarize by TEMPLATED
+	templated.co @templatedco
+	Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
 <html>
-<head>
-    <title>Cuaderno de laboratorio</title>
-    <meta charset='utf-8' />
-    <link href='static/style.css' rel='stylesheet' />
-</head>
-<body>
-  <header id="main-header">
-    <a id="logo-header" href="#">
-      <span class="site-name">Cuaderno de laboratorio</span>
-    </a> <!-- / #logo-header -->
-  </header><!-- / #main-header -->
-  <div class="details">
-    <span id="author" class="author">Juan Marco Bujjamer</span><br>
-    <span id="email" class="email"><a href="mailto:jubujjamer@df.uba.ar">jubujjamer@df.uba.ar</a></span><br>
-  </div>
+	<head>
+		<title>Cuaderno de laboratorio</title>
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<meta name="description" content="" />
+		<meta name="keywords" content="" />
+		<!--[if lte IE 8]><script src="css/ie/html5shiv.js"></script><![endif]-->
+		<script src="static/js/jquery.min.js"></script>
+		<script src="static/js/jquery.dropotron.min.js"></script>
+		<script src="static/js/skel.min.js"></script>
+		<script src="static/js/skel-layers.min.js"></script>
+		<script src="static/js/init.js"></script>
 
-  <header id="main-header">
-    <a id="logo-header" href="#">
-      <span class="site-name">Indice general</span>
-    </a>
-  </header>
+		<link href='static/css/skel.css' rel='stylesheet' />
+		<link href='static/css/style.css' rel='stylesheet' />
 
-  <p><a href="file:////home/lec/lab_notebook/inventario/inventario.ods">Inventario</a></p>
-  <p><a href="./calendar">Calendario</a></p>
+	<!--[if lte IE 8]><link rel="stylesheet" href="css/ie/v8.css" /><![endif]-->
+	</head>
+	<body class="homepage">
 
-  <header id="main-header">
-    <a id="logo-header" href="#">
-      <span class="site-name"> Resumen de contenido</span>
-    </a> <!-- / #logo-header -->
-  </header><!-- / #main-header -->
+		<!-- Header Wrapper -->
+			<div class="wrapper style1">
 
- {% macro create_year_block(year) %}
-    <h3>{{year}}</h3>
- {% endmacro %}
+			<!-- Header -->
+				<div id="header">
+					<div class="container">
 
- {% macro create_month_block(title) %}
-    <h4>{{title}}</h4>
- {% endmacro %}
+						<!-- Logo -->
+							<h1><a href="#" id="logo">Cuaderno de laboratorio</a></h1>
 
- {% macro create_day_block(title) %}
-    <h2><a href="file://////home/lec/lab_notebook/content/2016-02-17/2016-02-17.html" class="bare"> {{title}} </a></h2>
- {% endmacro %}
+						<!-- Nav -->
+							<nav id="nav">
+								<ul>
+									<li class="active"><a href="./index">Home</a></li>
+									<li>
+										<a href="">Contenido</a>
+										<ul>
+											<li><a href="#">Indice</a></li>
+											<li><a href="./inventory">Inventario</a></li>
+											<li><a href="./calendar">Calendario</a></li>
+										</ul>
+									</li>
+									<li class="active"><a href="./summaries">Resúmenes</a></li>
+									<li class="active"><a href="">Proyectos</a>
+									<ul>
+										<li><a href="./ucnp">UCNP</a></li>
+										<li><a href="./fpm">Ptycografía de Fourier</a></li>
+										<li><a href="./chemoptics">Chemoptics</a></li>
+									</ul>
+									</li>
 
- {% macro add_summary_entry(summary) %}
-    <h5>{{summary}}</h5>
- {% endmacro %}
+									<li class="active"><a href="./fast_reference">Referencias</a></li>
+								</ul>
+							</nav>
 
- {% for title, dtype in dates %}
-    {% if dtype == "year" %}
-        {{ create_year_block(title) }}
-    {% elif dtype == "month" %}
-        {{ create_month_block(title) }}
-    {% elif dtype == "day" %}
-        {{ create_day_block(title) }}
+					</div>
+				</div>
 
-    {% elif dtype == "summary" %}
-        {{ add_summary_entry(title) }}
-    {% endif %}
- {% endfor %}
+			<!-- Banner -->
+				<div id="banner">
+					<section class="container">
+						<h2>Cuaderno de Laboratorio</h2>
+						<span>Juan Marco Bujjamer</span>
+						<p>Sensado ultrasensible mediante métodos ópticos. Vinculación tecnológica y aplicaciones.</p>
+					</section>
+				</div>
+			</div>
+		<!-- Section Three -->
+		{% set last_date = {'year': 1900, 'month': 0}%}
+		{% for value in day_dict %}
+			<div class="wrapper style4">
+				<section class="container">
+					<header class="major">
+						{% if value[0].year != last_date.year: %}
+							<h2>Año {{value[0].year}}</h2>
+							{% if last_date.update({'year': value[0].year}) %} {% endif %}
+						{% endif%}
+						{% if value[0].month != last_date.month: %}
+								<h3>Mes de {{dt.datetime.strftime(value[0], '%B')}}</h3>
+								{% if last_date.update({'month': value[0].month}) %} {% endif %}
+						{% endif %}
+						<span class="byline"><a href="{{dt.datetime.strftime(value[0], '%Y-%m-%d')}}">{{dt.datetime.strftime(value[0], '%A %d').decode('utf-8')}}</a></span>
+						Tags:
+						{% for tag in value[3]:%}
+							<a href="{{tag}}">{{tag}}. </a>
+						{% endfor%}
+					</header>
+					<div class="row flush">
+						<div class="4u">
+							<ul class="special-icons">
+								<li>
+									<span class="fa fa-book"></span>
+									<h3>Resumen</h3>
+									{% for sum in value[1] %}
+										{{sum}}.
+									{% endfor %}
+								</li>
+							</ul>
+						</div>
+						<div class="4u">
+							<ul class="special-icons">
+								<li>
+									<span class="fa fa-folder-open"></span>
+									<h3><a href="folder/{{dt.datetime.strftime(value[0], '%Y-%m-%d')}}">Contenido de la carpeta</a></h3>
+										<p>
+										{% if value[2]|length==0:%}
+										 Nada que mostrar.
+										{%endif%}
+										{% for content in value[2]:%}
+											{% if "png" in content:%}
+											<i class="fa fa-file-image-o"></i>
+											{% endif %}
+											{{content}}
+										{% endfor%}
+										<p>
+								</li>
+							</ul>
+						</div>
+						<div class="4u">
+							<ul class="special-icons">
+								<li>
+									<span class="fa fa-leaf"></span>
+									<h3>Futuras referencias</h3>
+									{% for ref in value[4]:%}
+										{{ref}}
+									{% endfor%}
+									</li>
+							</ul>
+						</div>
+					</div>
+			{% endfor%}
+		</section>
+	</div>
 
-
-</body>
+		<!-- Footer -->
+		<div id="footer">
+			<section class="container">
+				<header class="major">
+					<h2>Juan Marco Bujjamer</h2>
+					<span class="byline">Ingeniero Electrónico de la UBA</span>
+				</header>
+				<ul class="icons">
+					<li class="active"><a href="#" class="fa fa-facebook"><span>Facebook</span></a></li>
+					<li><a href="#" class="fa fa-twitter"><span>Twitter</span></a></li>
+					<li><a href="#" class="fa fa-dribbble"><span>Pinterest</span></a></li>
+					<li><a href="#" class="fa fa-google-plus"><span>Google+</span></a></li>
+				</ul>
+				<hr />
+			</section>
+			<!-- Copyright -->
+				<div id="copyright">
+					Design: <a href="http://templated.co">TEMPLATED</a> Images: <a href="http://unsplash.com">Unsplash</a> (<a href="http://unsplash.com/cc0">CC0</a>)
+				</div>
+		</div>
+	</body>
 </html>
