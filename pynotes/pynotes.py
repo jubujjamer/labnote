@@ -76,13 +76,16 @@ def get_existing_dates():
 
 def open_day_file(date_str, type='adoc'):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    if date_str not in get_existing_dates():
-        print("This case")
-        create_day_file(date_str)
+    existing_dates = get_existing_dates()
     if type is 'adoc':
+        if date_str not in existing_dates:
+            create_day_file(date_str)
         adoc_filename = get_date_file(date, type='adoc')
         call(["atom", adoc_filename])
     elif type is 'html':
+        if date_str not in existing_dates:
+            print("File never created.")
+            return
         html_filename = get_date_file(date, type='html')
         call(['xdg-open', html_filename])
 
@@ -140,28 +143,10 @@ def get_summary(date_str):
         print('No file to read in %s' % date_str)
         return ''
     flines = adoc_day_file.readlines()
-    day_sum_list = [line[3:].decode('utf-8')
-                    for line in flines if line[0:2] == '==' and line[3] != '=']
-    day_sum_list = [normalize('NFKD', data[:-1]).encode('ascii', 'ignore')
-                    for data in day_sum_list]
+    day_sum_list = [line[3:] for line in flines if line[0:2] == '==' and line[3] != '=']
+    # day_sum_list = [data[:-1] for data in day_sum_list]
     return day_sum_list
 
-def get_hashtag_list(date_str):
-    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    date_name = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
-    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
-    path = os.path.expanduser(adoc_filename)
-    try:
-        adoc_day_file = open(path, 'r')
-    except:
-        print('No file to read in %s' % date_str)
-        return ''
-    flines = adoc_day_file.readlines()
-    hashtag_list = []
-    for line in flines:
-        hashtag_list += [i.group().split('#')[1] for i in re.finditer('(^|\s)#[a-z]+', line)]
-    return hashtag_list
 
 def get_future_references(date_str):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
@@ -175,19 +160,10 @@ def get_future_references(date_str):
         print('No file to read in %s' % date_str)
         return ''
     flines = adoc_day_file.readlines()
-    day_ref_list = [line[3:].decode('utf-8')
-                    for line in flines if line[0:3] == '[*]']
+    day_ref_list = [line[3:] for line in flines if line[0:3] == '[*]']
     day_ref_list = [normalize('NFKD', data[:-1]).encode('ascii', 'ignore')
                     for data in day_ref_list]
     return day_ref_list
-
-def get_all_hashtags():
-    complete_hashtags = []
-    for fdate_str in get_existing_dates():
-        hashtag_list = get_hashtag_list(fdate_str)
-        if hashtag_list != []:
-            complete_hashtags.append(hashtag_list)
-    return complete_hashtags
 
 
 def get_dir_contents(date_str):
@@ -201,7 +177,7 @@ def get_dir_contents(date_str):
     for l in list_dir:
         not_printable = ['adoc' in l, 'images' in l, 'html' in l]
         if not any(not_printable):
-            l = l.decode('ascii', 'ignore')
+            # l = l.decode('ascii', 'ignore')
             list_final.append("%s" % l)
     return list_final
 
@@ -286,8 +262,6 @@ def open_template_index():
 
         last_year = fdate.year
         last_month = fdate.month
-
-    print(get_all_hashtags())
     with open(JSUM, 'w') as outfile:
         json.dump(summary_list, outfile)
     app = index_server.create_server(day_dict=day_list, dt=dt)
@@ -309,3 +283,56 @@ def convert_all_asciidocs():
             call(['asciidoctor', path])
         except:
             print("File %s not found." % path)
+
+
+def get_hashtag_list(date_str):
+    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    date_name = date.strftime('%Y-%m-%d')
+    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
+    path = os.path.expanduser(adoc_filename)
+    try:
+        adoc_day_file = open(path, 'r')
+    except:
+        print('No file to read in %s' % date_str)
+        return ''
+    flines = adoc_day_file.readlines()
+    hashtag_list = []
+    for line in flines:
+        hashtag_list += [i.group().split('#')[1] for i in re.finditer('(^|\s)#[a-z]+', line)]
+    return hashtag_list
+
+
+def get_all_hashtags():
+    complete_hashtags = []
+    for fdate_str in get_existing_dates():
+        hashtag_list = get_hashtag_list(fdate_str)
+        if hashtag_list != []:
+            complete_hashtags.append(hashtag_list)
+    return complete_hashtags
+
+
+def find_tag_occurrence(tag=None):
+    dates = list()
+    for fdate_str in get_existing_dates():
+        hashtag_list = get_hashtag_list(fdate_str)
+        if tag in hashtag_list:
+            dates.append(fdate_str)
+    return dates
+
+
+def print_all_hashtags():
+    from collections import Counter
+    complete_hashtags = get_all_hashtags()
+    cnt = Counter()
+    for line in complete_hashtags:
+        for tag in line:
+            cnt[tag] += 1
+    for key, value in cnt.items():
+        print('%s: %i' % (key, value))
+
+def print_hashtag_occurrence(tag=None):
+    print('Listing occurrence of %s' % tag)
+    dates = find_tag_occurrence(tag)
+    for date in dates:
+        print('%s' % (date))

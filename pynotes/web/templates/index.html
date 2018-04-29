@@ -85,7 +85,7 @@
 								<h3>Mes de {{dt.datetime.strftime(value[0], '%B')}}</h3>
 								{% if last_date.update({'month': value[0].month}) %} {% endif %}
 						{% endif %}
-						<span class="byline"><a href="{{dt.datetime.strftime(value[0], '%Y-%m-%d')}}">{{dt.datetime.strftime(value[0], '%A %d').decode('utf-8')}}</a></span>
+						<span class="byline"><a href="{{dt.datetime.strftime(value[0], '%Y-%m-%d')}}">{{dt.datetime.strftime(value[0], '%A %d')}}</a></span>
 						Tags:
 						{% for tag in value[3]:%}
 							<a href="{{tag}}">{{tag}}. </a>
