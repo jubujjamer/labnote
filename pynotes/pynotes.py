@@ -74,20 +74,22 @@ def get_existing_dates():
     return dirs
 
 
-def open_day_file(date_str, type='adoc'):
+def open_day_file(date_str, mode='adoc'):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
     existing_dates = get_existing_dates()
-    if type is 'adoc':
+    if mode == 'adoc':
         if date_str not in existing_dates:
             create_day_file(date_str)
         adoc_filename = get_date_file(date, type='adoc')
-        call(["atom", adoc_filename])
-    elif type is 'html':
+        call(["nvim", adoc_filename])
+    elif mode == 'html':
         if date_str not in existing_dates:
             print("File never created.")
             return
         html_filename = get_date_file(date, type='html')
         call(['xdg-open', html_filename])
+    elif mode == 'pdf':
+        pass
 
 
 def open_index():
@@ -128,10 +130,12 @@ def create_day_file(date_str=None):
             _print_header(target, date)
     else:
         print('Directory already created.')
-    call(["atom", adoc_filename])
+    call(["nvim", adoc_filename])
 
 
 def get_summary(date_str):
+    """ Reads the summary information from the markdown file.
+    """
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
     date_name = date.strftime('%Y-%m-%d')
     dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
@@ -183,6 +187,8 @@ def get_dir_contents(date_str):
 
 
 def print_summary(date_str):
+    """ Prints the summary information of the day.
+    """
     summary = get_summary(date_str)
     for item in summary:
         print('-> %s' % item[0:-1], end='\n')

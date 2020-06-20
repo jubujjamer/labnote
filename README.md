@@ -1,4 +1,4 @@
-# labnote
+labnote
 Lab notebook managing program for Linux based on Markup files
 
 
@@ -25,3 +25,6 @@ parser.add_argument('--index', '-i', dest='open_index',
 parser.add_argument('--update', dest='update_asciidocs',
                     action='store_true',
                     help='converts all asciidocs to html')
+
+Click
+

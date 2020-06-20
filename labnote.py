@@ -1,4 +1,5 @@
-#!/home/juan/anaconda2/envs/py27/bin/python
+#!/usr/bin/python
+
 # PYTHON_ARGCOMPLETE_OK
 import argcomplete
 import argparse
@@ -22,9 +23,6 @@ parser.add_argument('--view', '-v', dest='open_day_file', nargs=1,
 parser.add_argument('--edit', '-e', dest='open_edit', nargs=1,
                     action='store', help='opens a labnote adoc file for edition',
                     metavar='YYYY-MM-DD')
-# parser.add_argument('--index', '-i', dest='open_index',
-#                     action='store_true',
-#                     help='opens the general index')
 parser.add_argument('--index', '-i', dest='open_template_index',
                     action='store_true',
                     help='starts the general index server')
@@ -38,6 +36,12 @@ parser.add_argument('--where', '-w', dest='tag_occurrence', nargs=1,
                     action='store', help='prints dates containing the tag',
                     metavar='YYYY-MM-DD')
 
+#   lnote new 		Starts a new writing day.
+#   lnote info		Prints general info of the labnote manager.
+#   lnote open <date> --edit
+#   lnote tags --where <tag>
+#   lnote index
+#   lnote update
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
 if args.new_day:
