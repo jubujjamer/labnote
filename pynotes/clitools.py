@@ -8,6 +8,8 @@ import click
 # from pynotes import pynotes
 import pynotes
 
+print(pynotes.__dict__)
+
 #Check filetree
 
 class Config(object):
@@ -46,24 +48,30 @@ def info(config, date):
 @click.option('--mode', default='html', type=click.Choice(['html', 'adoc', 'pdf']))
 @pass_config
 def open(config, date, mode):
+    """ Open a given date in mode html, adoc or pdf.
+    """
     pynotes.open_day_file(date, mode)
 
 @lnote.command()
 def tags(tag):
+    """ Prints tags in all days.
+    """
     pynotes.print_all_hashtags()
 
 @lnote.command()
 @click.argument('tag')
 def where(tag):
+    """ Where to find a given tag.
+    """
     pynotes.print_hashtag_occurrence(tag)
 
 
 @lnote.command()
-@pass_config
 def index():
     pynotes.open_template_index()
 
 @lnote.command()
-@pass_config
-def update(config):
+def update():
+    """ Convert all ascidocs in html files.
+    """
     pynotes.update_asciidocs()

@@ -21,41 +21,22 @@ from unicodedata import normalize
 from fuzzywuzzy import fuzz, process
 from .web import index_server
 
-DAY_DOT_MARK = '.'
-HOME_DIR = '~/lab_notebook/'
-USER = 'Juan Marco Bujjamer'
-EMAIL = 'jubujjamer@df.uba.ar'
-JSUM = './pynotes/web/static/summary.json'
-DIR_DICT = {'CONT': 'content',
-            'INV': 'inventario',
-            'DOCS': 'documents',
-            'GEN': 'general'}
+from .config import DirectoryTree, UserData, PROJECT_NAME
 locale.setlocale(locale.LC_TIME, '')  # Dates in Spanish
+dir_tree = DirectoryTree(PROJECT_NAME)
+user_data = UserData()
 
-
-def _get_date_path(date):
-    str_date = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], str_date)
-    return os.path.expanduser(dir_name)
 
 def get_inventory_path():
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['INV'], 'inventario.ods')
-    return os.path.expanduser(dir_name)
+    return dir_tree.inventory 
 
-def get_date_file(date, type='adoc'):
-    str_date = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], str_date)
-    path = os.path.join(dir_name, str_date + '.adoc')
-    if type is 'adoc':
-        return os.path.expanduser(path)
-    elif type is 'html':
-        call(['asciidoctor', os.path.expanduser(path)])
-        path = os.path.join(dir_name, str_date + '.html')
-        return os.path.expanduser(path)
+
+def get_date_file(date, file_type='adoc'):
+    return dir_tree.get_entry(date, file_type)
 
 
 def reset_index():
-    index_name = os.path.expanduser(os.path.join(HOME_DIR, 'index.adoc'))
+    index_name = dir_tree.home/'index.adoc'
     with open(index_name, 'w') as ifile:
         ifile.write('= Indice del cuaderno de laboratorio\n')
         ifile.write(USER + ' ' + EMAIL + '\n')
@@ -68,10 +49,11 @@ def reset_index():
 
 
 def get_existing_dates():
-    dir_name = os.path.join(HOME_DIR, DIR_DICT['CONT'])
-    dir_name = os.path.expanduser(dir_name)
-    dirs = os.listdir(dir_name)
-    return dirs
+    return dir_tree.get_dates()
+
+
+def open_editor(filename):
+    call(["nvim", filename])
 
 
 def open_day_file(date_str, mode='adoc'):
@@ -80,8 +62,8 @@ def open_day_file(date_str, mode='adoc'):
     if mode == 'adoc':
         if date_str not in existing_dates:
             create_day_file(date_str)
-        adoc_filename = get_date_file(date, type='adoc')
-        call(["nvim", adoc_filename])
+        adoc_filename = get_date_file(date)
+        open_editor(adoc_filename)
     elif mode == 'html':
         if date_str not in existing_dates:
             print("File never created.")
@@ -94,24 +76,18 @@ def open_day_file(date_str, mode='adoc'):
 
 def open_index():
     update_index()
-    index_filename = os.path.join(HOME_DIR, 'index.html')
-    index_filename = os.path.expanduser(index_filename)
-    print(index_filename)
+    index_name = dir_tree.home/'index.html'
     call(['xdg-open', index_filename])
 
 
 def init_filetree():
-    for d in DIR_DICT:
-        new_dir = os.path.join(HOME_DIR, DIR_DICT[d])
-        new_dir = os.path.expanduser(new_dir)
-        if not os.path.exists(new_dir):
-            print(d)
-            os.makedirs(new_dir)
+    for path in dir_tree:
+        path.mkdir(parents=True, exist_ok=True)
 
 
 def _print_header(target, date):
     target.write('= '+date.strftime('%Y-%m-%d')+'\n')
-    target.write(USER + ' ' + EMAIL + '\n')
+    target.write(user_data.user + ' ' + user_data.email + '\n')
     target.write(date.strftime("%A %d de %B de %Y\n"))
     target.write(':toc:\n')
     target.write(':icons: font\n')
@@ -122,44 +98,39 @@ def create_day_file(date_str=None):
         date = dt.datetime.today()
     else:
         date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    path = _get_date_path(date)
-    adoc_filename = get_date_file(date, 'adoc')
-    if not os.path.exists(path):
-        os.makedirs(path)
-        with open(adoc_filename, 'w') as target:
-            _print_header(target, date)
-    else:
-        print('Directory already created.')
-    call(["nvim", adoc_filename])
+    path = dir_tree.date_dir(date)
+    path.mkdir(parents=True, exist_ok=True)
+    note_file = get_date_file(date)
+    note_file.touch(exist_ok=True)
+    with open(note_file, 'w') as target:
+        _print_header(target, date)
+    open_editor(note_file)
 
 
 def get_summary(date_str):
     """ Reads the summary information from the markdown file.
     """
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    date_name = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
-    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
-    path = os.path.expanduser(adoc_filename)
+    note = dir_tree.get_entry(date)
     try:
-        adoc_day_file = open(path, 'r')
+        adoc_day_file = open(note, 'r')
     except:
         print('No file to read in %s' % date_str)
         return ''
     flines = adoc_day_file.readlines()
     day_sum_list = [line[3:] for line in flines if line[0:2] == '==' and line[3] != '=']
-    # day_sum_list = [data[:-1] for data in day_sum_list]
     return day_sum_list
 
 
 def get_future_references(date_str):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    date_name = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
-    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
-    path = os.path.expanduser(adoc_filename)
+    # date_name = date.strftime('%Y-%m-%d')
+    # dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+    # adoc_filename = os.path.join(dir_name, date_name + '.adoc')
+    note = dir_tree.get_entry(date)
+    # path = os.path.expanduser(adoc_filename)
     try:
-        adoc_day_file = open(path, 'r')
+        adoc_day_file = open(note, 'r')
     except:
         print('No file to read in %s' % date_str)
         return ''
@@ -172,11 +143,13 @@ def get_future_references(date_str):
 
 def get_dir_contents(date_str):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    date_name = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
-    path = os.path.expanduser(dir_name)
+    # date_name = date.strftime('%Y-%m-%d')
+    # dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
+    # path = os.path.expanduser(dir_name)
+    path = dir_tree.date_dir(date)
 
-    list_dir = os.listdir(path)
+    # list_dir = os.listdir(path)
+    list_dit = path.glob('**/*')
     list_final = []
     for l in list_dir:
         not_printable = ['adoc' in l, 'images' in l, 'html' in l]
@@ -195,14 +168,12 @@ def print_summary(date_str):
 
 
 def search_day(date_str, limit):
-    dir_name = os.path.join(HOME_DIR, DIR_DICT['CONT'])
-    dir_name = os.path.expanduser(dir_name)
-    dirs = os.listdir(dir_name)
-    dates_list = sorted([(dt.datetime.strptime(a, '%Y-%m-%d')) for a in dirs],
+    dirs = get_dates()
+    dates_list = sorted([(dt.datetime.strptime(a, '%Y-%m-%d')) 
+                         for a in dirs],
                         reverse=True)
     dates_syns = [date.strftime('%A %d %B %Y') for date in dates_list]
     dates_found = process.extract(date_str, dates_syns, limit=limit)
-    print(dates_found)
 
 
 def update_index(complete=None):
@@ -210,7 +181,7 @@ def update_index(complete=None):
     """
     fdates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
                      for date in get_existing_dates()])
-    index_name = os.path.expanduser(os.path.join(HOME_DIR, 'index.adoc'))
+    index_name = dir_tree.home/'index.adoc'
     with open(index_name, "r+") as ifile:
         lines = ifile.readlines()
         idates = list()
@@ -293,10 +264,7 @@ def convert_all_asciidocs():
 
 def get_hashtag_list(date_str):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    date_name = date.strftime('%Y-%m-%d')
-    dir_name = os.path.join(HOME_DIR + DIR_DICT['CONT'], date_name)
-    adoc_filename = os.path.join(dir_name, date_name + '.adoc')
-    path = os.path.expanduser(adoc_filename)
+    path = dir_tree.get_entry(date)
     try:
         adoc_day_file = open(path, 'r')
     except:
@@ -305,7 +273,8 @@ def get_hashtag_list(date_str):
     flines = adoc_day_file.readlines()
     hashtag_list = []
     for line in flines:
-        hashtag_list += [i.group().split('#')[1] for i in re.finditer('(^|\s)#[a-z]+', line)]
+        hashtag_list += [i.group().split('#')[1] for
+                         i in re.finditer('(^|\s)#[a-z]+', line)]
     return hashtag_list
 
 

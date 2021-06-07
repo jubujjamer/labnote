@@ -6,9 +6,13 @@ import argparse
 
 from pynotes import pynotes
 
+import datetime as dt
+
 # Check filetree
 pynotes.init_filetree()
 existing_dates = pynotes.get_existing_dates()
+date = dt.datetime.strptime('2020-04-05', "%Y-%m-%d")
+# pynotes.get_date_file(date))
 
 parser = argparse.ArgumentParser(description='A laboratory notes management system.')
 parser.add_argument('--newday', dest='new_day', action='store_true',
