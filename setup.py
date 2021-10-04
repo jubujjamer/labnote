@@ -7,9 +7,11 @@ setup(
     install_requires=[
         'Click',
         'python-Levenshtein',
+        'fuzzywuzzy',
+        'flask'
     ],
     entry_points='''
         [console_scripts]
-        lnote=pynotes.clitools:lnote
+        pynotes = pynotes.clitools:lnote
     ''',
     )

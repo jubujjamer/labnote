@@ -31,7 +31,7 @@ def get_inventory_path():
     return dir_tree.inventory 
 
 
-def get_date_file(date, file_type='adoc'):
+def get_date_file(date, file_type='md'):
     return dir_tree.get_entry(date, file_type)
 
 
@@ -53,7 +53,7 @@ def get_existing_dates():
 
 
 def open_editor(filename):
-    call(["nvim", filename])
+    call(["konsole", "-e", "nvim", filename])
 
 
 def open_day_file(date_str, mode='adoc'):
@@ -86,12 +86,10 @@ def init_filetree():
 
 
 def _print_header(target, date):
-    target.write('= '+date.strftime('%Y-%m-%d')+'\n')
-    target.write(user_data.user + ' ' + user_data.email + '\n')
-    target.write(date.strftime("%A %d de %B de %Y\n"))
-    target.write(':toc:\n')
-    target.write(':icons: font\n')
-
+    target.write('# '+date.strftime('%Y-%m-%d')+'\n')
+    target.write(user_data.user + ' (' + user_data.email + ')\n\n')
+    target.write(date.strftime("%A %d de %B de %Y\n").title())
+    
 
 def create_day_file(date_str=None):
     if date_str is None:
@@ -101,9 +99,9 @@ def create_day_file(date_str=None):
     path = dir_tree.date_dir(date)
     path.mkdir(parents=True, exist_ok=True)
     note_file = get_date_file(date)
-    note_file.touch(exist_ok=True)
-    with open(note_file, 'w') as target:
-        _print_header(target, date)
+    if not note_file.exists():
+        with open(note_file, 'w') as target:
+            _print_header(target, date)
     open_editor(note_file)
 
 
@@ -118,7 +116,7 @@ def get_summary(date_str):
         print('No file to read in %s' % date_str)
         return ''
     flines = adoc_day_file.readlines()
-    day_sum_list = [line[3:] for line in flines if line[0:2] == '==' and line[3] != '=']
+    day_sum_list = [line[3:] for line in flines if line[0:2] == '##' and line[3] != '=']
     return day_sum_list
 
 

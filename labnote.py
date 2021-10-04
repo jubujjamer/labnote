@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 # PYTHON_ARGCOMPLETE_OK
-import argcomplete
 import argparse
 
 from pynotes import pynotes

@@ -19,11 +19,12 @@ HOME_DIR = '~/lab_notebook/'
 USER = 'Juan Marco Bujjamer'
 EMAIL = 'jubujjamer@df.uba.ar'
 JSUM = './pynotes/web/static/summary.json'
-PROJECT_NAME = 'LEC'
+PROJECT_NAME = 'TEST'
 DIR_DICT = {'CONT': 'content',
             'INV': 'inventario',
             'DOCS': 'documents',
             'GEN': 'general'}
+SUFFIX = 'adoc'
 
 class UserData():
     def __init__(self):
@@ -41,22 +42,22 @@ class DirectoryTree():
 
     @property
     def content(self):
-        path = self.home/DIR_DICT['CONT']/PROJECT_NAME
+        path = self.home/PROJECT_NAME/DIR_DICT['CONT']
         return path.expanduser()
 
     @property
     def inventory(self):
-        path  = self.home/DIR_DICT['INV']
+        path  = self.home/PROJECT_NAME/DIR_DICT['INV']
         return path.expanduser()
 
     @property
     def documents(self):
-        path = self.home/DIR_DICT['DOCS']
+        path = self.home/PROJECT_NAME/DIR_DICT['DOCS']
         return path.expanduser()
 
     @property
     def general(self):
-        path =  self.home/DIR_DICT['GEN']
+        path =  self.home/PROJECT_NAME/DIR_DICT['GEN']
         return path.expanduser()
 
     def date_dir(self, date):
@@ -67,7 +68,6 @@ class DirectoryTree():
     def get_dates(self):
         cdir = self.content
         project_dirs = cdir.glob("*/*")
-        # print([d.name for d in project_dirs if d.is_dir()])
         return  [d.name for d in project_dirs if d.is_dir()]
     
     def __iter__(self):
@@ -78,7 +78,7 @@ class DirectoryTree():
 
     def get_entry(self, date, suffix='adoc'):
         str_date = date.strftime('%Y-%m-%d')
-        available = ['adoc', 'html']
+        available = ['adoc', 'html', 'md']
         assert suffix in available
         if suffix[0] != '.':
             suffix = '.'+suffix

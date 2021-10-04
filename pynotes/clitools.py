@@ -4,12 +4,7 @@
 
 Command line interface tools"""
 import click
-
-# from pynotes import pynotes
-import pynotes
-
-print(pynotes.__dict__)
-
+from pynotes import pynotes
 #Check filetree
 
 class Config(object):
@@ -24,6 +19,7 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 def lnote(config):
     """ Laboratory notebooks managing system.
     """
+    print("Init fileree")
     pynotes.init_filetree()
     existing_dates = pynotes.get_existing_dates()
 
