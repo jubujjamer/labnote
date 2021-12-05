@@ -15,11 +15,12 @@ from pathlib import Path
 
 
 DAY_DOT_MARK = '.'
+SUBTITLE = '##'
 HOME_DIR = '~/lab_notebook/'
 USER = 'Juan Marco Bujjamer'
 EMAIL = 'jubujjamer@df.uba.ar'
 JSUM = './pynotes/web/static/summary.json'
-PROJECT_NAME = 'TEST'
+PROJECT_NAME = 'STL'
 DIR_DICT = {'CONT': 'content',
             'INV': 'inventario',
             'DOCS': 'documents',

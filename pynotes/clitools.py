@@ -49,7 +49,7 @@ def open(config, date, mode):
     pynotes.open_day_file(date, mode)
 
 @lnote.command()
-def tags(tag):
+def tags():
     """ Prints tags in all days.
     """
     pynotes.print_all_hashtags()
@@ -61,6 +61,12 @@ def where(tag):
     """
     pynotes.print_hashtag_occurrence(tag)
 
+@lnote.command()
+@click.argument('tag')
+def content(tag):
+    """ Where to find a given tag.
+    """
+    pynotes.print_hashtag_content(tag)
 
 @lnote.command()
 def index():

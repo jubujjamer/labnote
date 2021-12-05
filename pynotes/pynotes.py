@@ -21,7 +21,7 @@ from unicodedata import normalize
 from fuzzywuzzy import fuzz, process
 from .web import index_server
 
-from .config import DirectoryTree, UserData, PROJECT_NAME
+from .config import DirectoryTree, UserData, PROJECT_NAME, SUBTITLE
 locale.setlocale(locale.LC_TIME, '')  # Dates in Spanish
 dir_tree = DirectoryTree(PROJECT_NAME)
 user_data = UserData()
@@ -116,7 +116,8 @@ def get_summary(date_str):
         print('No file to read in %s' % date_str)
         return ''
     flines = adoc_day_file.readlines()
-    day_sum_list = [line[3:] for line in flines if line[0:2] == '##' and line[3] != '=']
+    day_sum_list = [line[3:] for line in flines
+                    if line[0:2] == SUBTITLE and line[3] != '=']
     return day_sum_list
 
 
@@ -271,9 +272,38 @@ def get_hashtag_list(date_str):
     flines = adoc_day_file.readlines()
     hashtag_list = []
     for line in flines:
-        hashtag_list += [i.group().split('#')[1] for
-                         i in re.finditer('(^|\s)#[a-z]+', line)]
+        hashtag_list += [json.loads(line.split("tags: ")[1])[0]
+                         for i in re.finditer('(^|\s)tags: +', line)]
     return hashtag_list
+
+
+def get_hashtag_content(date_str, tag):
+    date = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    path = dir_tree.get_entry(date)
+    try:
+        adoc_day_file = open(path, 'r')
+    except:
+        print('No file to read in %s' % date_str)
+        return ''
+    flines = adoc_day_file.readlines()
+
+    titles_lines = [index for index, line in enumerate(flines)
+                    if line[0:2] == SUBTITLE and line[3] != '=']
+    selected_content = []
+    for line_index, line in enumerate(flines):
+        found_tag = [json.loads(line.split("tags: ")[1])[0]
+                         for i in re.finditer('(^|\s)tags: +', line)]
+        if tag in found_tag:
+            diff_list = [line_index - tl for tl in titles_lines]
+            tag_indexes = [index for index, elem in enumerate(diff_list) if elem < 0]
+            if len(tag_indexes) > 0:
+                start_index = titles_lines[tag_indexes[0] - 1]
+                end_index = titles_lines[tag_indexes[0]]
+            else:
+                start_index = titles_lines[-1]
+                end_index = -1
+            selected_content = flines[start_index: end_index]
+    return selected_content
 
 
 def get_all_hashtags():
@@ -294,6 +324,14 @@ def find_tag_occurrence(tag=None):
     return dates
 
 
+def find_tag_content(tag=None):
+    dates = list()
+    contents = list()
+    for fdate_str in get_existing_dates():
+        contents.append(get_hashtag_content(fdate_str, tag))
+        dates.append(fdate_str)
+    return dates, contents
+
 def print_all_hashtags():
     from collections import Counter
     complete_hashtags = get_all_hashtags()
@@ -305,7 +343,15 @@ def print_all_hashtags():
         print('%s: %i' % (key, value))
 
 def print_hashtag_occurrence(tag=None):
-    print('Listing occurrence of %s' % tag)
+    print('Listing occurrence of tag \"%s\"' % tag)
     dates = find_tag_occurrence(tag)
     for date in dates:
         print('%s' % (date))
+
+def print_hashtag_content(tag=None):
+    print('Listing occurrence of tag \"%s\"' % tag)
+    dates, contents = find_tag_content(tag)
+    for date, content in zip(dates, contents):
+        print('%s' % (date))
+        for c in content:
+            print(c, end="")
