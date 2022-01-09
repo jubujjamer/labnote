@@ -25,7 +25,7 @@ DIR_DICT = {'CONT': 'content',
             'INV': 'inventario',
             'DOCS': 'documents',
             'GEN': 'general'}
-SUFFIX = 'adoc'
+SUFFIX = 'md'
 
 class UserData():
     def __init__(self):
@@ -77,7 +77,7 @@ class DirectoryTree():
         for path in dirs:
             yield path
 
-    def get_entry(self, date, suffix='adoc'):
+    def get_entry(self, date, suffix=SUFFIX):
         str_date = date.strftime('%Y-%m-%d')
         available = ['adoc', 'html', 'md']
         assert suffix in available

@@ -19,7 +19,6 @@ pass_config = click.make_pass_decorator(Config, ensure=True)
 def lnote(config):
     """ Laboratory notebooks managing system.
     """
-    print("Init fileree")
     pynotes.init_filetree()
     existing_dates = pynotes.get_existing_dates()
 
@@ -32,16 +31,17 @@ def new(config, date):
     pynotes.create_day_file() 
 
 @lnote.command()
-@click.option('--date', '-d', nargs=1, required=True)
+@click.argument('date', nargs=1, required=True)
 @pass_config
 def info(config, date):
-    """ Prints summarized information.
+    """ Prints summarized information of a given date.
     """
     pynotes.print_summary(date)
     
 @lnote.command()
-@click.option('--date', '-d', default='', nargs=1, required=True)
-@click.option('--mode', default='html', type=click.Choice(['html', 'adoc', 'pdf']))
+#@click.option('--date', '-d', default='', nargs=1, required=True)
+@click.argument('date', nargs=1, required=True)
+@click.option('--mode', default='md', type=click.Choice(['html', 'md', 'pdf']))
 @pass_config
 def open(config, date, mode):
     """ Open a given date in mode html, adoc or pdf.

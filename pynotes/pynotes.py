@@ -9,6 +9,7 @@ Usage:
 
 """
 from __future__ import print_function
+from json.decoder import JSONDecodeError
 import os
 import datetime as dt
 import locale
@@ -59,7 +60,7 @@ def open_editor(filename):
 def open_day_file(date_str, mode='adoc'):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
     existing_dates = get_existing_dates()
-    if mode == 'adoc':
+    if mode in ['adoc', 'md']:
         if date_str not in existing_dates:
             create_day_file(date_str)
         adoc_filename = get_date_file(date)
@@ -77,7 +78,7 @@ def open_day_file(date_str, mode='adoc'):
 def open_index():
     update_index()
     index_name = dir_tree.home/'index.html'
-    call(['xdg-open', index_filename])
+    call(['xdg-open', index_name])
 
 
 def init_filetree():
@@ -266,14 +267,18 @@ def get_hashtag_list(date_str):
     path = dir_tree.get_entry(date)
     try:
         adoc_day_file = open(path, 'r')
-    except:
+    except FileExistsError:
         print('No file to read in %s' % date_str)
         return ''
     flines = adoc_day_file.readlines()
     hashtag_list = []
     for line in flines:
-        hashtag_list += [json.loads(line.split("tags: ")[1])[0]
-                         for i in re.finditer('(^|\s)tags: +', line)]
+        for i in re.finditer('(^|\s)tags: +', line):
+            try:
+                current_tags = json.loads(line.split("tags: ")[1])[0]
+                hashtag_list.append(current_tags)
+            except JSONDecodeError:
+                print("JSON error while parsing tag at ", date_str)
     return hashtag_list
 
 
@@ -316,6 +321,8 @@ def get_all_hashtags():
 
 
 def find_tag_occurrence(tag=None):
+    """ Finds the occurrence of a given tag.
+    """
     dates = list()
     for fdate_str in get_existing_dates():
         hashtag_list = get_hashtag_list(fdate_str)
@@ -343,15 +350,6 @@ def print_all_hashtags():
         print('%s: %i' % (key, value))
 
 def print_hashtag_occurrence(tag=None):
-    print('Listing occurrence of tag \"%s\"' % tag)
     dates = find_tag_occurrence(tag)
     for date in dates:
         print('%s' % (date))
-
-def print_hashtag_content(tag=None):
-    print('Listing occurrence of tag \"%s\"' % tag)
-    dates, contents = find_tag_content(tag)
-    for date, content in zip(dates, contents):
-        print('%s' % (date))
-        for c in content:
-            print(c, end="")
