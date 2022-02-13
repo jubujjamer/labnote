@@ -77,3 +77,19 @@ def update():
     """ Convert all ascidocs in html files.
     """
     pynotes.update_asciidocs()
+
+@lnote.command()
+@click.argument('guide', nargs=1, required=False)
+@pass_config
+def guides(config, guide):
+    """ Opens a document in the general directory.
+    """
+    pynotes.open_guide(guide)
+
+@lnote.command()
+@click.argument('note_text', nargs=-1, required=True)
+@pass_config
+def nt(config, note_text):
+    """ Short note to remember.
+    """
+    pynotes.short_note(note_text)

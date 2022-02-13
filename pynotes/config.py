@@ -61,6 +61,11 @@ class DirectoryTree():
         path =  self.home/PROJECT_NAME/DIR_DICT['GEN']
         return path.expanduser()
 
+    @property
+    def short_notes(self):
+        return self.general / "short_notes.md"
+
+
     def date_dir(self, date):
         str_date = date.strftime('%Y-%m-%d')
         year = str(date.year)
@@ -70,6 +75,11 @@ class DirectoryTree():
         cdir = self.content
         project_dirs = cdir.glob("*/*")
         return  [d.name for d in project_dirs if d.is_dir()]
+
+    def get_guides(self):
+        cdir = self.general
+        project_dirs = cdir.glob("*")
+        return  [d for d in project_dirs if d.is_file()]
     
     def __iter__(self):
         dirs = [self.content, self.inventory, 
@@ -86,5 +96,7 @@ class DirectoryTree():
         dir_name = self.date_dir(date)
         path = dir_name/str_date
         return path.with_suffix(suffix)
+
+    
 
 

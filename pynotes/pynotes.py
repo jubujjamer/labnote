@@ -56,7 +56,6 @@ def get_existing_dates():
 def open_editor(filename):
     call(["konsole", "-e", "nvim", filename])
 
-
 def open_day_file(date_str, mode='adoc'):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
     existing_dates = get_existing_dates()
@@ -74,6 +73,28 @@ def open_day_file(date_str, mode='adoc'):
     elif mode == 'pdf':
         pass
 
+def open_guide(guide_name):
+    """ Opens a guide from the corresponding folder (general).
+    """
+    existing_guides = dir_tree.get_guides()
+    guides_names = [en.stem for en in existing_guides]
+    if not guide_name:
+        for en in existing_guides:
+            print(en.stem)
+        return
+    try:
+        guide_index = guides_names.index(guide_name)
+    except ValueError:
+        guide_index = -1
+    if guide_index >= 0:
+        open_editor(existing_guides[guide_index])
+    else:
+        guide_file = dir_tree.general / guide_name
+        guide_file = guide_file.with_suffix(".md")
+        with open(guide_file, 'w') as target:
+            _print_header(target, name=guide_name)
+        open_editor(guide_file)
+
 
 def open_index():
     update_index()
@@ -86,10 +107,18 @@ def init_filetree():
         path.mkdir(parents=True, exist_ok=True)
 
 
-def _print_header(target, date):
-    target.write('# '+date.strftime('%Y-%m-%d')+'\n')
-    target.write(user_data.user + ' (' + user_data.email + ')\n\n')
-    target.write(date.strftime("%A %d de %B de %Y\n").title())
+def _print_header(target, date=None, name=None):
+    if date :
+        target.write('# '+date.strftime('%Y-%m-%d')+'\n')
+        target.write(user_data.user + ' (' + user_data.email + ')\n\n')
+        target.write(date.strftime("%A %d de %B de %Y\n").title())
+    elif name:
+        print(name)
+        target.write('# '+ name.capitalize() +'\n')
+        target.write(user_data.user + ' (' + user_data.email + ')\n\n')
+    else:
+        print("No File has been edited.")
+        return
     
 
 def create_day_file(date_str=None):
@@ -330,7 +359,6 @@ def find_tag_occurrence(tag=None):
             dates.append(fdate_str)
     return dates
 
-
 def find_tag_content(tag=None):
     dates = list()
     contents = list()
@@ -353,3 +381,11 @@ def print_hashtag_occurrence(tag=None):
     dates = find_tag_occurrence(tag)
     for date in dates:
         print('%s' % (date))
+
+def short_note(note_text):
+    """ Writes short notes.
+    """
+    with open(dir_tree.short_notes, 'a') as note_file:
+        datestamp = str(dt.datetime.today())
+        note_file.write(f'{datestamp}\n')
+        note_file.write(f'\t{"".join(n+" " for n in note_text)}\n')
