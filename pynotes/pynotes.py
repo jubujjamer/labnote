@@ -311,3 +311,23 @@ def print_hashtag_occurrence(tag=None):
     dates = find_tag_occurrence(tag)
     for date in dates:
         print('%s' % (date))
+  
+
+def short_note_list():
+    """ Lists short notes.
+    """
+    try:
+        with open(dir_tree.short_notes, 'r') as note_file:
+            for line in note_file.readlines():
+                print(line, end='')
+    except FileNotFoundError:
+        print("Notes buffer empty.")
+
+        
+def short_note_flush():
+    """ Erases short notes.
+    """
+    try:
+        os.remove(dir_tree.short_notes)
+    except FileNotFoundError:
+        pass
