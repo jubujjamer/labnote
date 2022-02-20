@@ -69,16 +69,6 @@ def content(tag):
     pynotes.print_hashtag_content(tag)
 
 @lnote.command()
-def index():
-    pynotes.open_template_index()
-
-@lnote.command()
-def update():
-    """ Convert all ascidocs in html files.
-    """
-    pynotes.update_asciidocs()
-
-@lnote.command()
 @click.argument('guide', nargs=1, required=False)
 @pass_config
 def guides(config, guide):
@@ -93,3 +83,19 @@ def nt(config, note_text):
     """ Short note to remember.
     """
     pynotes.short_note(note_text)
+
+@lnote.command()
+@click.argument('note_text', nargs=-1, required=True)
+@pass_config
+def note(config, note_text):
+    """ Short note to remember.
+    """
+    pynotes.short_note(note_text)
+
+@lnote.command()
+@click.argument('time_tag', nargs=-1, required=True)
+@pass_config
+def merge(config, time_tag):
+    """ Merge multiple days in a pdf file.
+    """
+    pynotes.merge_multiple_notes(time_tag)

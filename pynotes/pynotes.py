@@ -22,7 +22,7 @@ from unicodedata import normalize
 from fuzzywuzzy import fuzz, process
 from .web import index_server
 
-from .config import DirectoryTree, UserData, PROJECT_NAME, SUBTITLE
+from .config import DirectoryTree, UserData, PROJECT_NAME, SUBTITLE, TMP_PATH
 locale.setlocale(locale.LC_TIME, '')  # Dates in Spanish
 dir_tree = DirectoryTree(PROJECT_NAME)
 user_data = UserData()
@@ -52,13 +52,24 @@ def reset_index():
 def get_existing_dates():
     return dir_tree.get_dates()
 
+def markdown_to_pdf(md_file):
+    parents_path = md_file.parents[0]
+    out_path = TMP_PATH / 'out.pdf'
+    call(['pandoc', '--resource-path', parents_path,
+          '-V', 'linkcolor:blue',
+          '-V', 'geometry:a4paper',
+          '-V', 'geometry:margin=2cm',
+          '-V', 'mainfont=\"DejaVu Serif\"',
+          '-V,' 'monofont=\"DejaVu Sans Mono\"', 
+          md_file, "-o", out_path])
+    return out_path
 
 def open_editor(filename):
     call(["konsole", "-e", "nvim", filename])
 
-def open_day_file(date_str, mode='adoc'):
+def open_day_file(date_str, mode='md'):
     date = dt.datetime.strptime(date_str, "%Y-%m-%d")
-    existing_dates = get_existing_dates()
+    existing_dates = dir_tree.get_dates()
     if mode in ['adoc', 'md']:
         if date_str not in existing_dates:
             create_day_file(date_str)
@@ -71,7 +82,13 @@ def open_day_file(date_str, mode='adoc'):
         html_filename = get_date_file(date, type='html')
         call(['xdg-open', html_filename])
     elif mode == 'pdf':
-        pass
+        if date_str not in existing_dates:
+            print("File never created.")
+            return
+        adoc_filename = get_date_file(date)
+        out_file = markdown_to_pdf(adoc_filename)
+        call(['xdg-open', out_file])
+
 
 def open_guide(guide_name):
     """ Opens a guide from the corresponding folder (general).
@@ -209,7 +226,7 @@ def update_index(complete=None):
     """ Updates index with the information on new added days.
     """
     fdates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
-                     for date in get_existing_dates()])
+                     for date in dir_tree.get_dates()])
     index_name = dir_tree.home/'index.adoc'
     with open(index_name, "r+") as ifile:
         lines = ifile.readlines()
@@ -252,7 +269,7 @@ def open_template_index():
     """
     # First write summaries to a json file to be accesed by the calendar.
     fdates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
-                     for date in get_existing_dates()])
+                     for date in dir_tree.get_dates()])
     day_list = list()
     summary_list = list()
     # then run the web service
@@ -278,7 +295,7 @@ def convert_all_asciidocs():
     """ Updates index with the information on new added days.
     """
     fdates = [dt.datetime.strptime(date, '%Y-%m-%d')
-                     for date in get_existing_dates()]
+                     for date in dir_tree.get_dates()]
 
     for date in fdates:
         try:
@@ -339,21 +356,19 @@ def get_hashtag_content(date_str, tag):
             selected_content = flines[start_index: end_index]
     return selected_content
 
-
 def get_all_hashtags():
     complete_hashtags = []
-    for fdate_str in get_existing_dates():
+    for fdate_str in dir_tree.get_dates():
         hashtag_list = get_hashtag_list(fdate_str)
         if hashtag_list != []:
             complete_hashtags.append(hashtag_list)
     return complete_hashtags
 
-
 def find_tag_occurrence(tag=None):
     """ Finds the occurrence of a given tag.
     """
     dates = list()
-    for fdate_str in get_existing_dates():
+    for fdate_str in dir_tree.get_dates():
         hashtag_list = get_hashtag_list(fdate_str)
         if tag in hashtag_list:
             dates.append(fdate_str)
@@ -362,7 +377,7 @@ def find_tag_occurrence(tag=None):
 def find_tag_content(tag=None):
     dates = list()
     contents = list()
-    for fdate_str in get_existing_dates():
+    for fdate_str in dir_tree.get_dates():
         contents.append(get_hashtag_content(fdate_str, tag))
         dates.append(fdate_str)
     return dates, contents
@@ -389,3 +404,19 @@ def short_note(note_text):
         datestamp = str(dt.datetime.today())
         note_file.write(f'{datestamp}\n')
         note_file.write(f'\t{"".join(n+" " for n in note_text)}\n')
+
+def merge_multiple_notes(time_tag=None):
+    sorted_dates = sorted([dt.datetime.strptime(date, '%Y-%m-%d')
+                          for date in dir_tree.get_dates()])
+    selected_dates = []
+    with open("out.md", 'w') as out_md:
+        for date in sorted_dates:
+            if date.year == 2022:
+                path = dir_tree.get_entry(date)
+                print(path)
+                out_file = markdown_to_pdf(path)
+                # call(['xdg-open', out_file])
+    #             with open(path, 'r') as date_file:
+    #                 [out_md.write(line) for line in date_file.readlines()]
+    # out_file = markdown_to_pdf("out.md")
+    # call(['xdg-open', out_file])

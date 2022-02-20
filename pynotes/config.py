@@ -25,6 +25,8 @@ DIR_DICT = {'CONT': 'content',
             'INV': 'inventario',
             'DOCS': 'documents',
             'GEN': 'general'}
+TMP_PATH = Path('./tmp')
+TMP_PATH.mkdir(exist_ok=True)
 SUFFIX = 'md'
 
 class UserData():
@@ -64,7 +66,6 @@ class DirectoryTree():
     @property
     def short_notes(self):
         return self.general / "short_notes.md"
-
 
     def date_dir(self, date):
         str_date = date.strftime('%Y-%m-%d')
