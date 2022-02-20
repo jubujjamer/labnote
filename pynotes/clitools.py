@@ -75,3 +75,17 @@ def update():
     """ Convert all ascidocs in html files.
     """
     pynotes.update_asciidocs()
+
+@lnote.command()
+@click.option('--mode', default='add', type=click.Choice(['add', 'flush', 'list']))
+@click.argument('note_text', nargs=-1, required=False)
+@pass_config
+def nt(config, note_text, mode):
+    """ Short note to remember.
+    """
+    if mode == 'add':
+        pynotes.short_note(note_text)
+    elif mode == 'list':
+        pynotes.short_note_list()
+    elif mode == 'flush':
+        pynotes.short_note_flush()
